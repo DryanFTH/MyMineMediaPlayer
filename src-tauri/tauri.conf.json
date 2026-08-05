@@ -1,0 +1,73 @@
+{
+    "$schema": "https://schema.tauri.app/config/2",
+    "productName": "My Mine Media Player",
+    "mainBinaryName": "my-mine-media-player",
+    "version": "0.1.0",
+    "identifier": "com.dryanfth.my-mine-media-player",
+    "build": {
+        "beforeDevCommand": "pnpm dev",
+        "devUrl": "http://localhost:1420",
+        "beforeBuildCommand": "pnpm build",
+        "frontendDist": "../dist"
+    },
+    "app": {
+        "windows": [
+            {
+                "title": "My Mine Media Player",
+                "width": 1280,
+                "height": 800,
+                "minWidth": 960,
+                "minHeight": 600,
+                "resizable": true,
+                "fullscreen": false,
+                "center": true,
+                "dragDropEnabled": false
+            }
+        ],
+        "security": {
+            "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' asset: https://asset.localhost https:; media-src 'self' http://127.0.0.1:* asset: https://asset.localhost; frame-src 'self' https:;",
+            "assetProtocol": {
+                "enable": true
+            }
+        }
+    },
+    "bundle": {
+        "active": true,
+        "targets": ["deb", "appimage", "nsis"],
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico"
+        ],
+        "externalBin": ["binaries/unrar"],
+        "publisher": "DryanFTH",
+        "homepage": "https://github.com/DryanFTH/MyMineMediaPlayer",
+        "category": "Video",
+        "shortDescription": "Anime library manager and media player",
+        "longDescription": "My Mine Media Player is a desktop application for organizing, downloading, and watching your anime library. It supports archive extraction (ZIP/RAR), per-resolution downloads, watch progress tracking, and integrates with Otakudesu as an anime source.",
+        "windows": {
+            "certificateThumbprint": null,
+            "digestAlgorithm": "sha256",
+            "nsis": {
+                "installMode": "currentUser",
+                "languages": ["English"],
+                "displayLanguageSelector": false,
+                "installerIcon": "icons/icon.ico"
+            },
+            "webviewInstallMode": {
+                "type": "downloadBootstrapper"
+            }
+        },
+        "linux": {
+            "appimage": {
+                "bundleMediaFramework": true
+            },
+            "deb": {
+                "depends": ["gstreamer1.0-plugins-bad", "gstreamer1.0-libav"],
+                "section": "video"
+            }
+        }
+    }
+}

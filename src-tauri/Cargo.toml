@@ -1,0 +1,53 @@
+[package]
+name = "my-mine-media-player"
+version = "0.1.0"
+description = "Desktop anime library manager and media player built with Tauri v2, Rust, and React."
+authors = ["DryanFTH"]
+license = "MIT"
+repository = "https://github.com/DryanFTH/MyMineMediaPlayer"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "my_mine_media_player_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["protocol-asset", "test"] }
+tauri-plugin-opener = "2"
+tauri-plugin-log = "2.9.0"
+tauri-plugin-store = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-persisted-scope = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-fs = "2"
+tauri-plugin-shell = "2"
+tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }
+specta = "=2.0.0-rc.25"
+specta-typescript = "0.0.12"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12.28", features = ["stream"] }
+scraper = "0.27.0"
+tokio = { version = "1.53.1", features = ["full"] }
+tokio-util = { version = "0.7.19", features = ["compat"] }
+futures = "0.3.33"
+futures-util = "0.3.33"
+async-trait = "0.1.91"
+sqlx = { version = "0.9.0", features = ["runtime-tokio", "sqlite", "macros", "migrate"] }
+axum = "0.8.9"
+zip = "8.6.0"
+mega = { version = "0.8.0", features = ["reqwest"] }
+chrono = "0.4.45"
+strum = { version = "0.28.0", features = ["derive"] }
+regex = "1.13.1"
+percent-encoding = "2"
+mime_guess = "2"
+base64 = "0.23.1"
+log = "0.4.33"
