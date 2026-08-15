@@ -1,0 +1,158 @@
+# patchelf gstreamer
+name: Draft Release App
+
+on:
+    push:
+        tags:
+            - 'v*'
+    workflow_dispatch:
+
+env:
+  UNRAR_VERSION: '723'
+
+jobs:
+    buildrelease:
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - platform: 'windows-latest'
+                      target: 'x86_64-pc-windows-msvc'
+                    - platform: 'ubuntu-22.04'
+                      target: 'x86_64-unknown-linux-gnu'
+
+        runs-on: ${{ matrix.platform }}
+
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                fetch-depth: 0
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v7
+              with:
+                  node-version: 24
+                  cache: 'pnpm'
+
+            - name: install Rust stable
+              uses: dtolnay/rust-toolchain@stable
+              with:
+                targets: ${{ matrix.target }}
+
+            - name: Rust cache
+              uses: swatinem/rust-cache@v2
+              with:
+                workspaces: './src-tauri -> target'
+
+            - name: Install frontend dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Install Linux system deps
+              if: matrix.platform == 'ubuntu-22.04'
+              run: |
+                sudo apt-get update
+                sudo apt-get install -y \
+                  libwebkit2gtk-4.1-dev \
+                  libayatana-appindicator3-dev \
+                  librsvg2-dev \
+                  libxdo-dev \
+                  libssl-dev \
+                  patchelf \
+                  build-essential \
+                  curl \
+                  wget \
+                  file \
+                  libgtk-3-dev \
+                  gstreamer1.0-plugins-base \
+                  gstreamer1.0-plugins-good \
+                  gstreamer1.0-plugins-bad \
+                  gstreamer1.0-plugins-ugly \
+                  gstreamer1.0-libav \
+                  libgstreamer1.0-dev \
+                  libgstreamer-plugins-base1.0-dev
+
+            - name: Cache unrar sidecar
+              id: cache-unrar
+              uses: actions/cache@v6
+              with:
+                path: src-tauri/binaries
+                key: unrar-${{ matrix.target }}-${{ env.UNRAR_VERSION }}
+
+            - name: Prepare unrar sidecar (Linux)
+              if: matrix.platform == 'ubuntu-22.04' && steps.cache-unrar.outputs.cache-hit != 'true'
+              run: |
+                mkdir -p src-tauri/binaries
+                curl -fsSL -o rar.tar.gz "https://www.rarlab.com/rar/rarlinux-x64-${UNRAR_VERSION}.tar.gz"
+                tar -xzf rar.tar.gz
+                cp rar/unrar src-tauri/binaries/unrar-x86_64-unknown-linux-gnu
+                chmod +x src-tauri/binaries/unrar-x86_64-unknown-linux-gnu
+
+            - name: Prepare unrar sidecar (Windows)
+              if: matrix.platform == 'windows-latest' && steps.cache-unrar.outputs.cache-hit != 'true'
+              shell: pwsh
+              run: |
+                $downloadUrl = "https://www.rarlab.com/rar/winrar-x64-$env:UNRAR_VERSION.exe"
+                $destination = "src-tauri\binaries\unrar-x86_64-pc-windows-msvc.exe"
+                $workDir = Join-Path $env:RUNNER_TEMP "winrar-extract"
+
+                New-Item -ItemType Directory -Force -Path "src-tauri\binaries" | Out-Null
+                New-Item -ItemType Directory -Force -Path $workDir | Out-Null
+
+                $installerPath = Join-Path $workDir "winrar-installer.exe"
+                Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath
+
+                7z x $installerPath "-o$workDir" -y | Out-Null
+
+                if ($LASTEXITCODE -ne 0) {
+                  Write-Error "Ekstraksi installer WinRAR gagal (exit code $LASTEXITCODE)"
+                  exit 1
+                }
+
+                $UnrarExe = Get-ChildItem -Path $workDir -Filter "UnRAR.exe" -Recurse -File | Select-Object -First 1
+
+                if (-not $UnrarExe) {
+                  Write-Error "UnRAR.exe tidak ditemukan di hasil ekstraksi installer"
+                  exit 1
+                }
+
+                Copy-Item $UnrarExe.FullName $destination -Force
+
+            - name: Verify sidecar binary present
+              shell: bash
+              run: |
+                if [ "${{ matrix.platform }}" = "windows-latest" ]; then
+                  test -f src-tauri/binaries/unrar-x86_64-pc-windows-msvc.exe
+                else
+                  test -f src-tauri/binaries/unrar-x86_64-unknown-linux-gnu
+                fi
+                echo "Sidecar binary OK"
+
+            - name: Generate changelog
+              id: changelog
+              shell: bash
+              run: |
+                PREV_TAG=$(git describe --tags --abbrev=0 "${{ github.ref_name }}^" 2>/dev/null || echo "")
+
+                if [ -z "$PREV_TAG" ]; then
+                  LOG=$(git log --pretty-format:"~ %s (%h)")
+                else
+                  LOG=$(git log --pretty-format:"~ %s (%h)" "${PREV_TAG}..${{ github.ref_name }}")
+                fi
+
+                {
+                  echo "body<<CHANGELOG_EOF"
+                  echo "$LOG"
+                  echo "CHANGELOG_EOF"
+                } >> "$GITHUB_OUTPUT"
+
+            - name: Build Tauri app
+              uses: tauri-apps/tauri-action@v1
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                tagName: ${{ github.ref_name }}
+                releaseName: 'App v__VERSION__'
+                releaseBody: ${{ steps.changelog.outputs.body }}
+                releaseDraft: true
+                prerelease: false
+
