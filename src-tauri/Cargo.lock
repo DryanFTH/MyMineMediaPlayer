@@ -2822,7 +2822,7 @@ dependencies = [
 
 [[package]]
 name = "my-mine-media-player"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "axum",
