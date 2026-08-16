@@ -2,7 +2,7 @@
     "$schema": "https://schema.tauri.app/config/2",
     "productName": "My Mine Media Player",
     "mainBinaryName": "my-mine-media-player",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "identifier": "com.dryanfth.my-mine-media-player",
     "build": {
         "beforeDevCommand": "pnpm dev",
@@ -25,7 +25,7 @@
             }
         ],
         "security": {
-            "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' asset: https://asset.localhost https:; media-src 'self' http://127.0.0.1:* asset: https://asset.localhost; frame-src 'self' https:;",
+            "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' asset: http://asset.localhost https://asset.localhost https:; media-src 'self' http://127.0.0.1:* asset: http://asset.localhost https://asset.localhost; frame-src 'self' https:;",
             "assetProtocol": {
                 "enable": true
             }
