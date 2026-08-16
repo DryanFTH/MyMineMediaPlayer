@@ -52,6 +52,10 @@ jobs:
             - name: Install frontend dependencies
               run: pnpm install --frozen-lockfile
 
+            - name: Remove conflicting libunwind-dev package
+              if: matrix.platform == 'ubuntu-22.04'
+              run: sudo apt-get purge -y 'libunwind-*-dev' || true
+
             - name: Install Linux system deps
               if: matrix.platform == 'ubuntu-22.04'
               run: |
@@ -68,6 +72,7 @@ jobs:
                   wget \
                   file \
                   libgtk-3-dev \
+                  libunwind-dev \
                   gstreamer1.0-plugins-base \
                   gstreamer1.0-plugins-good \
                   gstreamer1.0-plugins-bad \
@@ -139,9 +144,9 @@ jobs:
                 PREV_TAG=$(git describe --tags --abbrev=0 "${{ github.ref_name }}^" 2>/dev/null || echo "")
 
                 if [ -z "$PREV_TAG" ]; then
-                  LOG=$(git log --pretty-format:"~ %s (%h)")
+                  LOG=$(git log --pretty-format="~ %s (%h)")
                 else
-                  LOG=$(git log --pretty-format:"~ %s (%h)" "${PREV_TAG}..${{ github.ref_name }}")
+                  LOG=$(git log --pretty-format="~ %s (%h)" "${PREV_TAG}..${{ github.ref_name }}")
                 fi
 
                 {
