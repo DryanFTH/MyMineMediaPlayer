@@ -1,6 +1,6 @@
 {
     "name": "my-mine-media-player",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "description": "Desktop anime library manager and media player built with Tauri v2, Rust, and React.",
     "private": true,
     "license": "MIT",
