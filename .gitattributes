@@ -1,0 +1,12 @@
+* text=auto eol=lf
+
+# SQL migration files MUST always use LF, regardless of platform,
+# so sqlx migration checksums stay consistent across Windows/Linux builds
+migrations/*.sql text eol=lf
+
+# Shell scripts must stay LF (Windows CRLF breaks shebang execution)
+*.sh text eol=lf
+
+# Windows-specific scripts should stay CRLF
+*.bat text eol=crlf
+*.ps1 text eol=crlf
