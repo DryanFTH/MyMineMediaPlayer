@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router';
 import {
     AlertCircle,
     Check,
-    CirclePlay,
+    // CirclePlay,
     Film,
     FolderOpen,
     Loader2,
@@ -40,16 +40,16 @@ export const STEPS: TSTEP[] = [
             'Pick a folder for anime downloads. Every episode you download gets saved there.',
         doneTitle: 'Anime folder set',
     },
-    {
-        id: 'youtube',
-        initKey: 'has_youtube_download_directory',
-        command: 'setYoutubeDownloadDirectory',
-        icon: CirclePlay,
-        title: 'Where should videos land?',
-        description:
-            'Pick a folder for YouTube downloads. This can be the same folder or a different one.',
-        doneTitle: 'YouTube folder set',
-    },
+    // {
+    //     id: 'youtube',
+    //     initKey: 'has_youtube_download_directory',
+    //     command: 'setYoutubeDownloadDirectory',
+    //     icon: CirclePlay,
+    //     title: 'Where should videos land?',
+    //     description:
+    //         'Pick a folder for YouTube downloads. This can be the same folder or a different one.',
+    //     doneTitle: 'YouTube folder set',
+    // },
 ];
 
 export default () => {
@@ -269,8 +269,8 @@ export default () => {
                                     className='mt-2 text-sm leading-relaxed'
                                     style={{ color: '#A0A0A0' }}
                                 >
-                                    Both folders are ready. Anime episodes and YouTube
-                                    videos will be saved automatically from now on.
+                                    you can always change these folders later in the
+                                    settings.
                                 </p>
                                 <button
                                     className='mt-7 w-full rounded-xl px-4 py-3 text-sm font-medium'
