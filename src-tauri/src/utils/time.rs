@@ -1,5 +1,4 @@
 use chrono::{DateTime, FixedOffset, NaiveDate, TimeZone};
-use log::info;
 
 fn _parse_month_str_to_number(month: &str) -> Option<u32> {
     let month_lower = month.to_lowercase();
