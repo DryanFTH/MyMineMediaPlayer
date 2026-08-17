@@ -22,10 +22,15 @@ pub async fn download_episode(
     resolution: Resolution,
     platform: Platform,
 ) -> Result<String, String> {
+    let db = app_state.database.read().await;
+    let pool = db
+        .as_ref()
+        .ok_or("Database belum diinisialisasi, set folder anime dulu".to_string())?;
+
     download_episode_service(
         &app,
         &state,
-        &app_state,
+        pool,
         anime_folder,
         episode,
         resolution,
@@ -45,10 +50,15 @@ pub async fn download_episodes(
     resolution: Resolution,
     platform: Platform,
 ) -> Result<(), String> {
+    let db = app_state.database.read().await;
+    let pool = db
+        .as_ref()
+        .ok_or("Database belum diinisialisasi, set folder anime dulu".to_string())?;
+
     download_episodes_service(
         &app,
         &state,
-        &app_state,
+        pool,
         anime_folder,
         episodes,
         resolution,
@@ -67,7 +77,12 @@ pub async fn download_latest_episode(
     resolution: Resolution,
     platform: Platform,
 ) -> Result<String, String> {
-    download_latest_episode_service(&app, &state, &app_state, anime, &resolution, &platform).await
+    let db = app_state.database.read().await;
+    let pool = db
+        .as_ref()
+        .ok_or("Database belum diinisialisasi, set folder anime dulu".to_string())?;
+
+    download_latest_episode_service(&app, &state, pool, anime, &resolution, &platform).await
 }
 
 #[tauri::command]
@@ -80,5 +95,10 @@ pub async fn download_latest_episodes(
     resolution: Resolution,
     platform: Platform,
 ) -> Result<(), String> {
-    download_latest_episodes_service(&app, &state, &app_state, animes, resolution, platform).await
+    let db = app_state.database.read().await;
+    let pool = db
+        .as_ref()
+        .ok_or("Database belum diinisialisasi, set folder anime dulu".to_string())?;
+
+    download_latest_episodes_service(&app, &state, pool, animes, resolution, platform).await
 }

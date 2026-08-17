@@ -4,10 +4,10 @@ use base64::{Engine, engine::general_purpose};
 use scraper::Html;
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use sqlx::SqlitePool;
 use tauri::{AppHandle, Emitter};
 
 use crate::{
-    AppState,
     download::{
         event::{DownloadAnimeError, DownloadAnimeInfo, DownloadError},
         state::DownloadState,
@@ -54,11 +54,11 @@ pub struct FormMirrorLink {
 
 pub async fn save_anime_information(
     app: &AppHandle,
-    state: &AppState,
+    pool: &SqlitePool,
     anime_folder: String,
     anime_information: AnimeInformation,
 ) -> Result<i64, String> {
-    if Anime::exists_by_folder_name(&state.database, &anime_folder)
+    if Anime::exists_by_folder_name(pool, &anime_folder)
         .await
         .map_err(|e| e.to_string())?
     {
@@ -78,7 +78,7 @@ pub async fn save_anime_information(
         download_image(exact_anime_folder.clone(), anime_information.image_url).await?;
 
     let genre_ids = Genre::create_many(
-        &state.database,
+        pool,
         &anime_information
             .genres
             .into_iter()
@@ -96,7 +96,7 @@ pub async fn save_anime_information(
     .map_err(|e| e.to_string())?;
 
     Anime::create(
-        &state.database,
+        pool,
         &AnimeInput {
             judul: anime_information.judul,
             japanese: anime_information.japanese,
@@ -115,7 +115,7 @@ pub async fn save_anime_information(
 pub async fn download_episodes(
     app: &AppHandle,
     state: &DownloadState,
-    app_state: &AppState,
+    pool: &SqlitePool,
     anime_folder: &str,
     episodes: Vec<EpisodeInformation>,
     resolution: Resolution,
@@ -125,7 +125,7 @@ pub async fn download_episodes(
         if let Err(e) = download_episode(
             app,
             state,
-            app_state,
+            pool,
             anime_folder,
             episode.clone(),
             resolution.clone(),
@@ -151,7 +151,7 @@ pub async fn download_episodes(
 pub async fn download_episode(
     app: &AppHandle,
     state: &DownloadState,
-    app_state: &AppState,
+    pool: &SqlitePool,
     anime_folder: &str,
     episode: EpisodeInformation,
     resolution: Resolution,
@@ -191,7 +191,7 @@ pub async fn download_episode(
         )
         .await?;
 
-    Anime::touch_folder_changed_at(&app_state.database, anime_folder)
+    Anime::touch_folder_changed_at(pool, anime_folder)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -201,14 +201,13 @@ pub async fn download_episode(
 pub async fn download_latest_episodes(
     app: &AppHandle,
     state: &DownloadState,
-    app_state: &AppState,
+    pool: &SqlitePool,
     animes: Vec<String>,
     resolution: Resolution,
     platform: Platform,
 ) -> Result<(), String> {
     for anime in animes {
-        download_latest_episode(app, state, app_state, anime.clone(), &resolution, &platform)
-            .await?;
+        download_latest_episode(app, state, pool, anime.clone(), &resolution, &platform).await?;
     }
 
     Ok(())
@@ -217,7 +216,7 @@ pub async fn download_latest_episodes(
 pub async fn download_latest_episode(
     app: &AppHandle,
     state: &DownloadState,
-    app_state: &AppState,
+    pool: &SqlitePool,
     anime: String,
     resolution: &Resolution,
     platform: &Platform,
@@ -240,7 +239,7 @@ pub async fn download_latest_episode(
     match download_episode(
         app,
         state,
-        app_state,
+        pool,
         &anime,
         latest_episode.clone(),
         resolution.clone(),
@@ -269,10 +268,10 @@ pub async fn download_latest_episode(
 
 pub async fn get_library_anime_info(
     app: &AppHandle,
-    state: &AppState,
+    pool: &SqlitePool,
     folder_name: String,
 ) -> Result<LibraryAnimeInformation, String> {
-    let anime_information = Anime::find_by_folder_name(app, &state.database, &folder_name)
+    let anime_information = Anime::find_by_folder_name(app, pool, &folder_name)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Anime tidak ditemukan")?;
@@ -356,7 +355,7 @@ pub async fn get_library_anime_info(
 
 pub async fn remove_episode(
     app: &AppHandle,
-    state: &AppState,
+    pool: &SqlitePool,
     folder_name: String,
     episode_name: String,
     resolution: Resolution,
@@ -365,7 +364,7 @@ pub async fn remove_episode(
     let anime_directory = get_anime_download_directory(&store)
         .ok_or("Anime download directory did not initialize yet")?;
 
-    let anime_information = Anime::find_by_folder_name(app, &state.database, &folder_name)
+    let anime_information = Anime::find_by_folder_name(app, pool, &folder_name)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Anime tidak ditemukan")?;
@@ -382,7 +381,7 @@ pub async fn remove_episode(
 
     std::fs::remove_file(episode_path).map_err(|e| e.to_string())?;
 
-    Anime::touch_folder_changed_at(&state.database, &folder_name)
+    Anime::touch_folder_changed_at(pool, &folder_name)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -391,14 +390,14 @@ pub async fn remove_episode(
 
 pub async fn remove_anime(
     app: &AppHandle,
-    state: &AppState,
+    pool: &SqlitePool,
     folder_name: String,
 ) -> Result<(), String> {
     let store = get_settings_store(&app).map_err(|e| e.to_string())?;
     let anime_directory = get_anime_download_directory(&store)
         .ok_or("Anime download directory did not initialize yet")?;
 
-    Anime::delete_by_folder_name(&state.database, &folder_name)
+    Anime::delete_by_folder_name(pool, &folder_name)
         .await
         .map_err(|e| e.to_string())?;
 

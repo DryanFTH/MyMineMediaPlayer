@@ -21,19 +21,22 @@ pub async fn get_dashboard_data(
     app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<DashboardData, String> {
-    let dashboard_stats = Anime::get_stats(&state.database)
+    let db = state.database.read().await;
+    let pool = db
+        .as_ref()
+        .ok_or("Database belum diinisialisasi, set folder anime dulu".to_string())?;
+
+    let dashboard_stats = Anime::get_stats(pool).await.map_err(|e| e.to_string())?;
+
+    let recently_change = Anime::recently_change(&app, pool, 8)
         .await
         .map_err(|e| e.to_string())?;
 
-    let recently_change = Anime::recently_change(&app, &state.database, 8)
+    let random_pick = Anime::random_pick(&app, pool, 8)
         .await
         .map_err(|e| e.to_string())?;
 
-    let random_pick = Anime::random_pick(&app, &state.database, 8)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let genre_distribution = Anime::genre_distribution(&state.database)
+    let genre_distribution = Anime::genre_distribution(pool)
         .await
         .map_err(|e| e.to_string())?;
 

@@ -40,6 +40,11 @@ pub async fn save_anime_information(
     anime_folder: String,
     anime_information: AnimeInformation,
 ) -> Result<i64, String> {
+    let db = state.database.read().await;
+    let pool = db
+        .as_ref()
+        .ok_or("Database belum diinisialisasi, set folder anime dulu".to_string())?;
+
     let mut anime_information = anime_information;
 
     anime_information.tanggal_rilis =
@@ -47,7 +52,7 @@ pub async fn save_anime_information(
             .map(|m| m.to_string())
             .map_err(|e| format!("Error pengolah Tanggal: {}", e.to_string()))?;
 
-    save_anime_information_service(&app, &state, anime_folder, anime_information).await
+    save_anime_information_service(&app, pool, anime_folder, anime_information).await
 }
 
 #[tauri::command]

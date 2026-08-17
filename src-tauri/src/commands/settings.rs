@@ -1,7 +1,12 @@
+use std::path::PathBuf;
+
 use tauri::AppHandle;
 use tauri::Manager;
+use tauri::State;
 use tauri_plugin_dialog::DialogExt;
 
+use crate::AppState;
+use crate::database::initialize_anime_database;
 use crate::store::settings::{
     AppSettings, UpdateSettingsPayload, get_settings_store, read_settings,
     set_anime_download_directory as set_anime_download_directory_key,
@@ -38,7 +43,10 @@ pub async fn pick_folder(app: AppHandle) -> Result<Option<String>, String> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn set_anime_download_directory(app: AppHandle) -> Result<bool, String> {
+pub async fn set_anime_download_directory(
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> Result<bool, String> {
     let folder = app.dialog().file().blocking_pick_folder();
 
     let Some(path) = folder else {
@@ -56,6 +64,23 @@ pub async fn set_anime_download_directory(app: AppHandle) -> Result<bool, String
     app.asset_protocol_scope()
         .allow_directory(&path_str, true)
         .map_err(|e| e.to_string())?;
+
+    let new_pool = initialize_anime_database(path_str.clone()).await;
+
+    {
+        let mut db = state.database.write().await;
+
+        if let Some(old_pool) = db.take() {
+            old_pool.close().await;
+        }
+
+        *db = Some(new_pool);
+    }
+
+    {
+        let mut roots = state.stream_roots.write().await;
+        roots.insert("anime".to_string(), PathBuf::from(&path_str));
+    }
 
     Ok(true)
 }

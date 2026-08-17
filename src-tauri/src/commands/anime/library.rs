@@ -16,7 +16,12 @@ pub async fn get_library_anime_information(
     state: State<'_, AppState>,
     folder_name: String,
 ) -> Result<LibraryAnimeInformation, String> {
-    get_library_anime_info(&app, &state, folder_name).await
+    let db = state.database.read().await;
+    let pool = db
+        .as_ref()
+        .ok_or("Database belum diinisialisasi, set folder anime dulu".to_string())?;
+
+    get_library_anime_info(&app, pool, folder_name).await
 }
 
 #[tauri::command]
@@ -26,7 +31,12 @@ pub async fn library_remove_anime(
     state: State<'_, AppState>,
     folder_name: String,
 ) -> Result<(), String> {
-    remove_anime(&app, &state, folder_name).await
+    let db = state.database.read().await;
+    let pool = db
+        .as_ref()
+        .ok_or("Database belum diinisialisasi, set folder anime dulu".to_string())?;
+
+    remove_anime(&app, pool, folder_name).await
 }
 
 #[tauri::command]
@@ -38,7 +48,12 @@ pub async fn library_remove_episode(
     episode_name: String,
     resolution: Resolution,
 ) -> Result<(), String> {
-    remove_episode(&app, &state, folder_name, episode_name, resolution).await
+    let db = state.database.read().await;
+    let pool = db
+        .as_ref()
+        .ok_or("Database belum diinisialisasi, set folder anime dulu".to_string())?;
+
+    remove_episode(&app, pool, folder_name, episode_name, resolution).await
 }
 
 #[tauri::command]
@@ -50,9 +65,14 @@ pub async fn get_paginate_animes_library(
     per_page: u32,
     sort: SortingMethod,
 ) -> Result<AnimePaginate, String> {
+    let db = state.database.read().await;
+    let pool = db
+        .as_ref()
+        .ok_or("Database belum diinisialisasi, set folder anime dulu".to_string())?;
+
     Anime::paginate(
         &app,
-        &state.database,
+        pool,
         page,
         per_page,
         sort,

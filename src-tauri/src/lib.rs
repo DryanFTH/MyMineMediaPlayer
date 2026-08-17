@@ -16,6 +16,7 @@ use specta_typescript::Typescript;
 use sqlx::SqlitePool;
 use tauri::Manager;
 use tauri_specta::{Builder, collect_events};
+use tokio::sync::RwLock;
 
 use crate::{
     commands::get_handlers,
@@ -36,7 +37,7 @@ use crate::{
 };
 
 pub struct AppState {
-    pub database: SqlitePool,
+    pub database: RwLock<Option<SqlitePool>>,
     pub stream_port: u16,
     pub stream_roots: StreamRoots,
     pub batch_file_path: Mutex<Option<PathBuf>>,
@@ -79,6 +80,8 @@ pub fn run() {
             let handle = app.handle();
 
             let settings = get_settings_store(&handle)?;
+            let mut initial_roots: HashMap<String, PathBuf> = HashMap::new();
+            let mut initial_pool: Option<SqlitePool> = None;
 
             if has_anime_download_directory(&settings) {
                 let anime_directory =
@@ -86,6 +89,15 @@ pub fn run() {
                         std::io::ErrorKind::NotFound,
                         "Can't get anime download directory",
                     ))?;
+
+                initial_roots.insert(
+                    "anime".to_string(),
+                    std::path::PathBuf::from(&anime_directory),
+                );
+
+                initial_pool = Some(tauri::async_runtime::block_on(initialize_anime_database(
+                    anime_directory.clone(),
+                )));
 
                 app.asset_protocol_scope()
                     .allow_directory(&anime_directory, true)?;
@@ -99,28 +111,14 @@ pub fn run() {
                 set_otakudesu_url(&settings, DEFAULT_BASE_URL);
             }
 
-            let mut initial_roots: HashMap<String, PathBuf> = HashMap::new();
+            let (stream_port, stream_roots) = tauri::async_runtime::block_on(spawn(initial_roots));
 
-            if has_anime_download_directory(&settings) {
-                let anime_directory = get_anime_download_directory(&settings)
-                    .ok_or("Failed to get anime directory".to_owned())?;
-                initial_roots.insert(
-                    "anime".to_string(),
-                    std::path::PathBuf::from(&anime_directory),
-                );
-
-                tauri::async_runtime::block_on(async move {
-                    let pool = initialize_anime_database(anime_directory).await;
-                    let (stream_port, stream_roots) = spawn(initial_roots).await;
-
-                    app.manage(AppState {
-                        database: pool,
-                        stream_port,
-                        stream_roots,
-                        batch_file_path: Mutex::new(None),
-                    });
-                })
-            }
+            app.manage(AppState {
+                database: RwLock::new(initial_pool),
+                stream_port,
+                stream_roots,
+                batch_file_path: Mutex::new(None),
+            });
 
             Ok(())
         })

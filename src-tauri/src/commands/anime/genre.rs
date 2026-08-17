@@ -21,7 +21,12 @@ pub async fn get_genre_list() -> Vec<GenreInformation> {
 #[tauri::command]
 #[specta::specta]
 pub async fn get_genre_list_library(state: State<'_, AppState>) -> Result<Vec<Genre>, String> {
-    Genre::all(&state.database).await.map_err(|e| e.to_string())
+    let db = state.database.read().await;
+    let pool = db
+        .as_ref()
+        .ok_or("Database belum diinisialisasi, set folder anime dulu".to_string())?;
+
+    Genre::all(pool).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -54,9 +59,14 @@ pub async fn get_animes_by_genre_library(
         GenreMatch::Any
     };
 
+    let db = state.database.read().await;
+    let pool = db
+        .as_ref()
+        .ok_or("Database belum diinisialisasi, set folder anime dulu".to_string())?;
+
     Anime::by_genres(
         &app,
-        &state.database,
+        pool,
         &genres,
         genre_match,
         page,
