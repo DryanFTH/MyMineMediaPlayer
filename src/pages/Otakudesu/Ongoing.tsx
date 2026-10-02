@@ -55,6 +55,7 @@ import {
     commands,
     events,
 } from '@/types/bindings';
+import { translateAnimeInformationDates } from '@/lib/date';
 
 const RESOLUTIONS: { value: Resolution; label: string }[] = [
     { value: 'P360', label: '360p' },
@@ -314,10 +315,16 @@ export default () => {
 
             if (infoRes.status === 'error') throw new Error(infoRes.error);
 
-            const saveRes = await commands.saveAnimeInformation(anime, infoRes.data);
+            const information = translateAnimeInformationDates(infoRes.data);
+            const saveRes = await commands.saveAnimeInformation(anime, information);
 
             if (saveRes.status === 'ok') {
                 queryClient.invalidateQueries({ queryKey: ['anime-library'] });
+            }
+
+            if (saveRes.status === 'error') {
+                console.log(saveRes.error, anime, information);
+                throw new Error(saveRes.error);
             }
 
             const res = await commands.addSeasonalAnimeByDay(day, anime);
@@ -397,7 +404,10 @@ export default () => {
 
             if (infoRes.status === 'error') throw new Error(infoRes.error);
 
-            await commands.saveAnimeInformation(anime.anime_name, infoRes.data);
+            await commands.saveAnimeInformation(
+                anime.anime_name,
+                translateAnimeInformationDates(infoRes.data),
+            );
 
             const res = await commands.downloadLatestEpisode(
                 anime.anime_name,

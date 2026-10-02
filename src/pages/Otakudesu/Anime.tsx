@@ -37,6 +37,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { translateAnimeInformationDates, translateIndonesianDate } from '@/lib/date';
 import {
     type AnimeInformation,
     type EpisodeInformation,
@@ -203,14 +204,17 @@ export default () => {
     ) {
         if (!info || !platform) return;
 
-        await commands.saveAnimeInformation(animeFolder, info);
+        await commands.saveAnimeInformation(
+            animeFolder,
+            translateAnimeInformationDates(info),
+        );
 
         const key = downloadKey(episode.name, resolution);
         setDownloads(prev => ({ ...prev, [key]: { status: 'queued' } }));
 
         const res = await commands.downloadEpisode(
             animeFolder,
-            episode,
+            { ...episode, date: translateIndonesianDate(episode.date) },
             resolution,
             platform,
         );
@@ -248,7 +252,10 @@ export default () => {
         setBatchDialogOpen(false);
         setBatchDownloading(true);
 
-        await commands.saveAnimeInformation(animeFolder, info);
+        await commands.saveAnimeInformation(
+            animeFolder,
+            translateAnimeInformationDates(info),
+        );
 
         const targets = info.episodes.filter(ep => !isDownloaded(ep, batchResolution));
 
@@ -262,7 +269,10 @@ export default () => {
 
         const res = await commands.downloadEpisodes(
             animeFolder,
-            targets.map(ep => ep.info),
+            targets.map(ep => ({
+                ...ep.info,
+                date: translateIndonesianDate(ep.info.date),
+            })),
             batchResolution,
             batchPlatform,
         );

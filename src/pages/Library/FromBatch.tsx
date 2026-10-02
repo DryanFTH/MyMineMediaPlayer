@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { translateIndonesianDate } from '@/lib/date';
 import {
     type AnimeInformation,
     type ArchiveEntry,
@@ -93,33 +94,6 @@ function finalMappingName(m: Pick<MappingRow, 'display' | 'suffix' | 'extension'
 
 function finalMappingBaseName(m: Pick<MappingRow, 'display' | 'suffix'>) {
     return `${m.display.trim().replace(/\s+/g, '_')}${m.suffix}`;
-}
-
-const ID_TO_EN_MONTH: Record<string, string> = {
-    Jan: 'Jan',
-    Feb: 'Feb',
-    Mar: 'Mar',
-    Apr: 'Apr',
-    Mei: 'May',
-    Jun: 'Jun',
-    Jul: 'Jul',
-    Agu: 'Aug',
-    Ags: 'Aug',
-    Sep: 'Sep',
-    Okt: 'Oct',
-    Nov: 'Nov',
-    Des: 'Dec',
-};
-
-function translateIndonesianDate(dateStr: string) {
-    if (!dateStr) return dateStr;
-    const match = dateStr.match(/^([A-Za-z]+)(\s.*)$/);
-    if (!match) return dateStr;
-
-    const [, month, rest] = match;
-    const key = month.charAt(0).toUpperCase() + month.slice(1).toLowerCase();
-    const translated = ID_TO_EN_MONTH[key];
-    return translated ? `${translated}${rest}` : dateStr;
 }
 
 function formatBytes(bytes: number) {
