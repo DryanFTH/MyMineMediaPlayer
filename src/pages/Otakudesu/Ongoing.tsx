@@ -46,6 +46,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { translateAnimeInformationDates } from '@/lib/date';
 import {
     type AnimeOngoingInfo,
     type Platform,
@@ -55,7 +56,6 @@ import {
     commands,
     events,
 } from '@/types/bindings';
-import { translateAnimeInformationDates } from '@/lib/date';
 
 const RESOLUTIONS: { value: Resolution; label: string }[] = [
     { value: 'P360', label: '360p' },
@@ -323,7 +323,6 @@ export default () => {
             }
 
             if (saveRes.status === 'error') {
-                console.log(saveRes.error, anime, information);
                 throw new Error(saveRes.error);
             }
 
